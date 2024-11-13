@@ -44,12 +44,43 @@ const authController = {
                 return res.status(400).json({ message: "Mật khẩu không đúng" });
             }
 
-            const token = jwt.sign({ id: user.user_id, email: user.email, role: user.role }, 'secret', { expiresIn: '1h' });
+            const token = jwt.sign(
+                { id: user.user_id, email: user.email, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
             res.status(200).json({ token });
         } catch (error) {
             res.status(400).json({ message: `Lỗi đăng nhập: ${error.message}` });
         }
+    },
+    async checkToken(req, res, next) {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ message: "Không có token, bạn cần đăng nhập." });
+        }
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: "Token không hợp lệ." });
+        }
+
+        try {
+            jwt.verify(token, 'secret', (err, user) => {
+                if (err) {
+                    return res.status(401).json({ message: "Token không hợp lệ." });
+                }
+                req.user = user;
+                res.status(200).json({
+                    message: "Token hợp lệ.",
+                    user: req.user,
+                });
+                // next();
+            });
+        } catch (err) {
+            return res.status(500).json({ message: "Lỗi server khi xác thực token." });
+        }
     }
+
 }
 
 module.exports = authController;
