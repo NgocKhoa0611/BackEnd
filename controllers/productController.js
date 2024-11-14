@@ -141,105 +141,88 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy sản phẩm theo danh mục: ${error.message}` });
         }
     },
-    async createProduct(req, res) {
-        const { product_name, price, category_id, detail } = req.body;
+    async addProduct(req, res) {
+        const { product_name, price, category_id, price_promotion } = req.body;
 
         try {
-            const product = await Product.create({
+            const newProduct = await Product.create({
                 product_name,
                 price,
+                price_promotion: price_promotion || 0,
                 category_id,
-                detail: {
-                    color_id: detail.color_id,
-                    size_id: detail.size_id,
-                    description: detail.description,
-                    productImage: {
-                        img_url: detail.productImage.img_url,
-                        is_primary: detail.productImage.is_primary
-                    }
-                }
-            }, {
-                include: [
-                    {
-                        model: ProductDetail, as: 'detail',
-                        include: [{ model: ProductImage, as: 'productImage' }]
-                    }
-                ]
             });
 
             res.status(201).json({
                 message: 'Thêm sản phẩm thành công',
-                product
+                newProduct
             });
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi thêm sản phẩm: ${error.message}` });
         }
     },
-    async deleteProduct(req, res) {
+    async hideProduct(req, res) {
         const { id } = req.params;
+        console.log('Product ID:', id);
         try {
-            await ProductDetail.destroy({
-                where: { product_id: id }
-            });
+            const product = await Product.findByPk(id);
+            console.log(product);
 
-            const result = await Product.destroy({
-                where: { product_id: id }
-            });
-
-            if (result === 0) {
-                return res.status(404).json({ message: 'Không tìm thấy sản phẩm để xóa' });
+            if (!product) {
+                return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
             }
 
-            res.status(200).json({ message: 'Xóa sản phẩm thành công' });
+            product.is_hidden = true;
+            await product.save();
+
+            res.status(200).json({ message: 'Sản phẩm đã được ẩn thành công', product });
         } catch (error) {
-            res.status(500).json({ message: `Lỗi khi xóa sản phẩm: ${error.message}` });
+            console.error('Lỗi khi ẩn sản phẩm:', error);
+            res.status(500).json({ message: 'Có lỗi xảy ra khi ẩn sản phẩm' });
+        }
+    },
+
+    async showProduct(req, res) {
+        const { id } = req.params;
+        console.log('Product ID:', id);
+        try {
+            const product = await Product.findByPk(id);
+            console.log(product);
+
+            if (!product) {
+                return res.status(404).json({ message: 'Sản phẩm không tồn tại' });
+            }
+
+            product.is_hidden = false;
+            await product.save();
+
+            res.status(200).json({ message: 'Sản phẩm đã được hiển thị thành công', product });
+        } catch (error) {
+            console.error('Lỗi khi hiển thị sản phẩm:', error);
+            res.status(500).json({ message: 'Có lỗi xảy ra khi hiển thị sản phẩm' });
         }
     },
     async updateProduct(req, res) {
         const { id } = req.params;
-        const { product_name, price, category_id, detail } = req.body;
+        const { product_name, price, price_promotion, category_id } = req.body;
 
         try {
+            // Fetch product by ID
             const product = await Product.findByPk(id);
 
             if (!product) {
                 return res.status(404).json({ message: 'Không tìm thấy sản phẩm để cập nhật' });
             }
 
-            await product.update({ product_name, price, category_id });
+            // Update product fields
+            await product.update({ product_name, price, price_promotion, category_id });
 
-            if (detail) {
-                const productDetail = await ProductDetail.findOne({
-                    where: { product_id: product.product_id }
-                });
-
-                if (productDetail) {
-                    await productDetail.update({
-                        color_id: detail.color_id,
-                        size_id: detail.size_id,
-                        description: detail.description
-                    });
-
-                    if (detail.productImage) {
-                        const productImage = await ProductImage.findOne({
-                            where: { product_detail_id: productDetail.product_detail_id }
-                        });
-
-                        if (productImage) {
-                            await productImage.update({
-                                img_url: detail.productImage.img_url,
-                                is_primary: detail.productImage.is_primary
-                            });
-                        }
-                    }
-                }
-            }
-
+            // Respond with success
             res.status(200).json({ message: 'Cập nhật sản phẩm thành công', product });
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi cập nhật sản phẩm: ${error.message}` });
         }
     }
+
 }
 
 module.exports = productController;

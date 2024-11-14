@@ -30,6 +30,11 @@ module.exports = (sequelize, DataTypes) => {
                     key: "category_id",
                 },
             },
+            is_hidden: {
+                type: DataTypes.TINYINT(1),
+                allowNull: false,
+                defaultValue: 0
+            }
         },
         {
             tableName: "product",

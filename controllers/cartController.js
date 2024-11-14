@@ -39,18 +39,15 @@ const cartController = {
                 return res.status(400).json({ message: 'product_id và quantity là bắt buộc' });
             }
 
-            // Tìm thông tin chi tiết sản phẩm (ProductDetail)
             const productDetail = await ProductDetail.findOne({
                 where: { product_id },
                 include: [{ model: Product, as: 'product' }],
             });
 
-            // Nếu không tìm thấy chi tiết sản phẩm
             if (!productDetail) {
                 return res.status(404).json({ message: 'Chi tiết sản phẩm không tìm thấy' });
             }
 
-            // Tìm giỏ hàng của người dùng
             const cart = await Cart.findOne({
                 where: { user_id },
                 include: [{
@@ -67,9 +64,7 @@ const cartController = {
                 }]
             });
 
-            // Nếu giỏ hàng đã tồn tại
             if (cart) {
-                // Kiểm tra sản phẩm trong giỏ hàng đã có chưa
                 const existingCartDetail = cart.cartDetail.find(item => item.product_id === product_id);
 
                 if (existingCartDetail) {
