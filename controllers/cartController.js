@@ -1,3 +1,4 @@
+const { where } = require('sequelize');
 const { Cart, CartDetail, ProductDetail, Product, ProductImage } = require('../models');
 
 const cartController = {
@@ -123,19 +124,121 @@ const cartController = {
     },
     async increaseQuantity(req, res) {
         try {
-            const { cart_detail_id } = req.params;
-            const cartItem = await CartDetail.findbyPk(cart_detail_id);
-            if (!cartItem) {
-                return res.status(404).json({ message: 'Item not found' });
+            const { product_detail_id } = req.body;
+            const { id } = req.user;
+            if (!id || !product_detail_id) {
+                return res.status(400).json({ message: "User ID and Product ID are required" });
             }
-            cartItem.quantity += 1;
-            await cartItem.save();
-            res.status(200).json({ message: 'Quantity increased', cartItem });
+
+            const cart = await Cart.findOne({
+                where: { user_id: id },
+                include: [{
+                    model: CartDetail,
+                    as: "cartDetail",
+                    where: { product_detail_id },
+                    include: [{
+                        model: ProductDetail,
+                        as: "ProductDetail",
+                        include: [
+                            { model: Product, as: 'product' },
+                            { model: ProductImage, as: 'productImage' }
+                        ]
+                    }]
+                }],
+            });
+
+            if (!cart || cart.cartDetail.length === 0) {
+                return res.status(404).json({ message: "Cart or product not found" });
+            }
+
+            const cartDetail = cart.cartDetail[0];
+            cartDetail.quantity += 1;
+            await cartDetail.save();
+            res.status(200).json({ message: "Quantity increased", cartDetail });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Error increasing quantity' });
+            console.error("Error increasing quantity:", error);
+            res.status(500).json({ message: "Không thể tăng số lượng sản phẩm." });
+        }
+    },
+    async decreaseQuantity(req, res) {
+        try {
+            const { product_detail_id } = req.body;
+            const { id } = req.user;
+
+            if (!id || !product_detail_id) {
+                return res.status(400).json({ message: "User ID and Product ID are required" });
+            }
+
+            const cart = await Cart.findOne({
+                where: { user_id: id },
+                include: [{
+                    model: CartDetail,
+                    as: "cartDetail",
+                    where: { product_detail_id },
+                    include: [{
+                        model: ProductDetail,
+                        as: "ProductDetail",
+                        include: [
+                            { model: Product, as: 'product' },
+                            { model: ProductImage, as: 'productImage' }
+                        ]
+                    }]
+                }],
+            });
+
+            if (!cart || cart.cartDetail.length === 0) {
+                return res.status(404).json({ message: "Cart or product not found" });
+            }
+
+            const cartDetail = cart.cartDetail[0];
+
+            if (cartDetail.quantity > 1) {
+                cartDetail.quantity -= 1;
+                await cartDetail.save();
+                return res.status(200).json({ message: "Quantity decreased", cartDetail });
+            } else {
+                return res.status(400).json({ message: "Quantity cannot be less than 1" });
+            }
+
+        } catch (error) {
+            console.error("Error decreasing quantity:", error);
+            res.status(500).json({ message: "Không thể giảm số lượng sản phẩm." });
+        }
+    },
+    async removeProduct(req, res) {
+        try {
+            const { product_detail_id } = req.body;
+            const { id } = req.user;
+
+            if (!id || !product_detail_id) {
+                return res.status(400).json({ message: "User ID and Product ID are required" });
+            }
+
+            const cart = await Cart.findOne({
+                where: { user_id: id },
+                include: [{
+                    model: CartDetail,
+                    as: "cartDetail",
+                    where: { product_detail_id },
+                }],
+            });
+
+            if (!cart || cart.cartDetail.length === 0) {
+                return res.status(404).json({ message: "Cart or product not found" });
+            }
+
+            const cartDetail = cart.cartDetail[0];
+            await cartDetail.destroy();
+
+            const updatedCart = await cartController.getCart(id);
+
+            res.status(200).json({ message: "Product removed", updatedCart });
+        } catch (error) {
+            console.error("Error removing product:", error);
+            res.status(500).json({ message: "Không thể xóa sản phẩm khỏi giỏ hàng." });
         }
     }
+
 }
 
 module.exports = cartController;

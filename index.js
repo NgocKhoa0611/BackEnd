@@ -11,8 +11,10 @@ const app = express();
 app.use(bodyParser.json());
 
 app.use(cors({
-    credentials: true,
+    origin: ['http://localhost:5173', 'http://localhost:3000'], // Array of allowed origins
+    credentials: true, // Allow credentials
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
