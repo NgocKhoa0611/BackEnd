@@ -2,6 +2,7 @@ const { Product, ProductDetail, Size, Color, ProductImage } = require('../models
 const { Sequelize } = require('sequelize');
 
 const productController = {
+    // Lấy danh sách sản phẩm
     async getAllProduct(req, res) {
         try {
             const products = await Product.findAll({
@@ -23,6 +24,8 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy danh sách sản phẩm: ${error.message}` });
         }
     },
+
+    // Lấy danh sách sản phẩm theo ID
     async getProductById(req, res) {
         const productId = req.params.id; // Lấy ID từ tham số URL
         try {
@@ -49,6 +52,8 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy sản phẩm: ${error.message}` });
         }
     },
+
+    // Lấy danh sách sản phẩm phổ biến
     async getFeaturedProducts(req, res) {
         try {
             const products = await Product.findAll({
@@ -72,6 +77,8 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy danh sách sản phẩm nổi bật: ${error.message}` });
         }
     },
+
+    // Lấy danh sách sản phẩm mới
     async getNewProducts(req, res) {
         try {
             const products = await Product.findAll({
@@ -93,6 +100,8 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy danh sách sản phẩm mới: ${error.message}` }); // Update error message
         }
     },
+
+    // Lấy danh sách sản phẩm giảm giá
     async getDiscountedProducts(req, res) {
         try {
             const products = await Product.findAll({
@@ -115,6 +124,7 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy danh sách sản phẩm giảm giá: ${error.message}` });
         }
     },
+    // Lấy danh sách sản phẩm theo danh mục
     async getProductbyCategory(req, res) {
         const categoryID = req.params.categoryID;
         try {
@@ -141,6 +151,8 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy sản phẩm theo danh mục: ${error.message}` });
         }
     },
+
+    // Thêm sản phẩm
     async addProduct(req, res) {
         const { product_name, price, category_id, price_promotion } = req.body;
 
@@ -160,6 +172,8 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi thêm sản phẩm: ${error.message}` });
         }
     },
+
+    // Ẩn sản phẩm
     async hideProduct(req, res) {
         const { id } = req.params;
         console.log('Product ID:', id);
@@ -181,6 +195,7 @@ const productController = {
         }
     },
 
+    // Hiện sản phẩm
     async showProduct(req, res) {
         const { id } = req.params;
         console.log('Product ID:', id);
@@ -201,6 +216,8 @@ const productController = {
             res.status(500).json({ message: 'Có lỗi xảy ra khi hiển thị sản phẩm' });
         }
     },
+
+    // Cập nhật sản phẩm
     async updateProduct(req, res) {
         const { id } = req.params;
         const { product_name, price, price_promotion, category_id } = req.body;

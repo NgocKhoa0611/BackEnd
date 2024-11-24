@@ -2,6 +2,7 @@ const { Category } = require('../models');
 const { Op } = require('sequelize');
 
 const categoryController = {
+    // Lấy danh sách danh mục
     async getAllCategory(req, res) {
         try {
             const categories = await Category.findAll();
@@ -10,6 +11,8 @@ const categoryController = {
             res.status(500).json({ message: `Lỗi khi lấy danh sách danh mục: ${error.message}` });
         }
     },
+
+    // Lấy danh sách danh mục theo Id
     async getCategoryByID(req, res) {
         try {
             const { id } = req.params;
@@ -24,6 +27,8 @@ const categoryController = {
             res.status(500).json({ message: `Lỗi khi lấy danh mục: ${error.message}` });
         }
     },
+
+    // Thêm danh mục
     async addCategory(req, res) {
         try {
             const { category_parent_id, category_name } = req.body;
@@ -44,6 +49,8 @@ const categoryController = {
             res.status(500).json({ message: 'Có lõi xảy ra khi thêm danh mục' });
         }
     },
+
+    // Ẩn danh mục
     async hideCategory(req, res) {
         const { id } = req.params;
         console.log('Category ID:', id);
@@ -65,6 +72,8 @@ const categoryController = {
             res.status(500).json({ message: 'Có lỗi xảy ra khi ẩn danh mục' });
         }
     },
+
+    // Hiện danh mục
     async showCategory(req, res) {
         const { id } = req.params;
         console.log('Category ID:', id);
@@ -84,6 +93,8 @@ const categoryController = {
             res.status(500).json({ message: 'Có lỗi xảy ra khi hiển thị danh mục' });
         }
     },
+
+    // Cập nhật danh mục
     async updateCategory(req, res) {
         const { id } = req.params;
         const { category_id, category_parent_id, category_name } = req.body;

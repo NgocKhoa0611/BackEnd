@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models'); // adjust the import path as needed
 
 const authController = {
+
+    // Đăng ký
     async registerUser(req, res) {
         const { email, password } = req.body;
         if (!email || !password) {
@@ -30,6 +32,7 @@ const authController = {
         }
     },
 
+    // Đăng nhập
     async loginUser(req, res) {
         const { email, password } = req.body;
         try {

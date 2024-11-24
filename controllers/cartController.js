@@ -1,10 +1,12 @@
-const { where } = require('sequelize');
 const { Cart, CartDetail, ProductDetail, Product, ProductImage } = require('../models');
 
 const cartController = {
+
+    // Lấy giỏ hàng
     async getCart(req, res) {
         try {
             const { id } = req.user;
+            console.log("User ID:", id);
 
             if (!id) {
                 return res.status(400).json({ message: 'user_id is required' });
@@ -31,10 +33,14 @@ const cartController = {
             res.status(500).json({ message: 'Error fetching cart' });
         }
     },
+
+    // Thêm giỏ hàng
     async addToCart(req, res) {
         try {
-            const { product_detail_id, quantity } = req.body;
+            const { product_detail_id, quantity } = req.body.newItem;
             const { id: user_id } = req.user;
+            console.log('Received payload:', req.body);
+            console.log('User ID:', req.user?.id);  // Kiểm tra user_id
 
             if (!product_detail_id || !quantity) {
                 return res.status(400).json({ message: 'product_detail_id và quantity là bắt buộc' });
@@ -67,10 +73,9 @@ const cartController = {
                 await existingCartDetail.save();
                 return res.status(200).json({ message: 'Cập nhật giỏ hàng thành công' });
             } else {
-                // Nếu sản phẩm chưa có, tạo mới chi tiết giỏ hàng
                 await CartDetail.create({
                     cart_id: cart.cart_id,
-                    product_id: productDetail.product_id, // Truyền product_id từ productDetail
+                    product_id: productDetail.product_id,
                     product_detail_id,
                     quantity,
                 });
@@ -81,26 +86,8 @@ const cartController = {
             res.status(500).json({ message: 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng' });
         }
     },
-    async updateCart(req, res) {
-        try {
-            const userId = req.user_id;
-            const { cart } = req.body;
-            const cartDb = await Cart.findOne({ where: { user_id: userId } });
-            if (!cartDb) {
-                return res.status(404).json({ message: 'Cart not found' });
-            }
-            const updatedCartDetails = cart.CartDetails.map(item => ({
-                cart_id: cartDb.cart_id,
-                product_detail_id: item.product_id,
-                quantity: item.quantity,
-                price: item.price,
-            }));
-            await CartDetail.bulkCreate(updatedCartDetails);
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Error updating cart' });
-        }
-    },
+
+    // Tăng số lượng
     async increaseQuantity(req, res) {
         try {
             const { product_detail_id } = req.body;
@@ -139,13 +126,15 @@ const cartController = {
             res.status(500).json({ message: "Không thể tăng số lượng sản phẩm." });
         }
     },
+
+    // Giảm số lượng
     async decreaseQuantity(req, res) {
         try {
             const { product_detail_id } = req.body;
             const { id } = req.user;
 
             if (!id || !product_detail_id) {
-                return res.status(400).json({ message: "User ID and Product ID are required" });
+                return res.status(400).json({ message: "User ID and Product detail ID are required" });
             }
 
             const cart = await Cart.findOne({
@@ -184,39 +173,71 @@ const cartController = {
             res.status(500).json({ message: "Không thể giảm số lượng sản phẩm." });
         }
     },
+
+    // Xóa sản phẩm khỏi giỏ hàng
     async removeProduct(req, res) {
         try {
-            const { product_detail_id } = req.body;
             const { id } = req.user;
+            const { product_detail_id } = req.params;
+            console.log(id);
 
-            if (!id || !product_detail_id) {
-                return res.status(400).json({ message: "User ID and Product ID are required" });
+            if (!id) {
+                return res.status(400).json({ message: "User ID is required" });
             }
 
-            const cart = await Cart.findOne({
-                where: { user_id: id },
+            if (!product_detail_id) {
+                return res.status(400).json({ message: "Product detail ID is required" });
+            }
+
+            const cartDetail = await CartDetail.findOne({
+                where: { product_detail_id },
                 include: [{
-                    model: CartDetail,
-                    as: "cartDetail",
-                    where: { product_detail_id },
+                    model: Cart,
+                    as: "cart",
+                    where: { user_id: id },
                 }],
             });
 
-            if (!cart || cart.cartDetail.length === 0) {
-                return res.status(404).json({ message: "Cart or product not found" });
+            if (!cartDetail) {
+                return res.status(404).json({ message: "Product not found in the cart" });
             }
 
-            const cartDetail = cart.cartDetail[0];
             await cartDetail.destroy();
 
-            const updatedCart = await cartController.getCart(id);
-
-            res.status(200).json({ message: "Product removed", updatedCart });
+            return res.status(200).json({ message: "Product removed successfully" });
         } catch (error) {
-            console.error("Error removing product:", error);
+            console.error("Error removing product:", error);  // Log the error for debugging
             res.status(500).json({ message: "Không thể xóa sản phẩm khỏi giỏ hàng." });
         }
     },
+
+    // Tạo hàm getCartData để chỉ lấy dữ liệu giỏ hàng mà không phụ thuộc vào res
+    async getCartData(userId) {
+        try {
+            const cartItems = await Cart.findOne({
+                where: { user_id: userId },
+                include: [{
+                    model: CartDetail,
+                    as: 'cartDetail',
+                    include: [{
+                        model: ProductDetail,
+                        as: 'ProductDetail',
+                        include: [
+                            { model: Product, as: 'product' },
+                            { model: ProductImage, as: 'productImage' }
+                        ]
+                    }]
+                }]
+            });
+
+            return cartItems ? cartItems : null;
+        } catch (error) {
+            console.error("Error fetching cart:", error);
+            throw new Error("Error fetching cart");
+        }
+    },
+
+    // Lấy số lượng item trong giỏ hàng
     async getCartCount(req, res) {
         try {
             const { id: user_id } = req.user;
