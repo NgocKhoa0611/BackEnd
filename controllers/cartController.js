@@ -1,4 +1,4 @@
-const { Cart, CartDetail, ProductDetail, Product, ProductImage } = require('../models');
+const { Cart, CartDetail, ProductDetail, Product, ProductImage, Color, Size } = require('../models');
 
 const cartController = {
 
@@ -6,7 +6,6 @@ const cartController = {
     async getCart(req, res) {
         try {
             const { id } = req.user;
-            console.log("User ID:", id);
 
             if (!id) {
                 return res.status(400).json({ message: 'user_id is required' });
@@ -21,7 +20,9 @@ const cartController = {
                         as: 'ProductDetail',
                         include: [
                             { model: Product, as: 'product' },
-                            { model: ProductImage, as: 'productImage' }
+                            { model: ProductImage, as: 'productImage' },
+                            { model: Color, as: 'color' },
+                            { model: Size, as: 'size' }
                         ]
                     }]
                 }]
@@ -39,8 +40,6 @@ const cartController = {
         try {
             const { product_detail_id, quantity } = req.body.newItem;
             const { id: user_id } = req.user;
-            console.log('Received payload:', req.body);
-            console.log('User ID:', req.user?.id);  // Kiểm tra user_id
 
             if (!product_detail_id || !quantity) {
                 return res.status(400).json({ message: 'product_detail_id và quantity là bắt buộc' });
@@ -107,7 +106,9 @@ const cartController = {
                         as: "ProductDetail",
                         include: [
                             { model: Product, as: 'product' },
-                            { model: ProductImage, as: 'productImage' }
+                            { model: ProductImage, as: 'productImage' },
+                            { model: Color, as: 'color' },
+                            { model: Size, as: 'size' }
                         ]
                     }]
                 }],

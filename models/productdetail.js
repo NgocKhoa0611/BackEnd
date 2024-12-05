@@ -22,6 +22,11 @@ module.exports = (sequelize, DataTypes) => {
                 type: DataTypes.STRING(255),
                 allowNull: true,
             },
+            quantity: {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            },
             product_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
@@ -29,6 +34,11 @@ module.exports = (sequelize, DataTypes) => {
                     model: "Product",
                     key: "product_id",
                 },
+            },
+            is_primary: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: 1,
             },
             isFeatured: {
                 type: DataTypes.BOOLEAN,

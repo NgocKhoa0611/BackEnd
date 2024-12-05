@@ -1,5 +1,4 @@
 const { Category } = require('../models');
-const { Op } = require('sequelize');
 
 const categoryController = {
     // Lấy danh sách danh mục

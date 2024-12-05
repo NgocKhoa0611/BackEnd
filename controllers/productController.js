@@ -1,5 +1,6 @@
 const { Product, ProductDetail, Size, Color, ProductImage } = require('../models');
 const { Sequelize } = require('sequelize');
+const { Op } = require('sequelize');
 
 const productController = {
     // Lấy danh sách sản phẩm
@@ -149,6 +150,41 @@ const productController = {
             res.status(200).json(products);
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi lấy sản phẩm theo danh mục: ${error.message}` });
+        }
+    },
+    async getProductByParentID(req, res) {
+        const { parentId } = req.params;
+
+        try {
+            if (!parentId) {
+                return res.status(400).json({ message: 'Parent ID không được để trống' });
+            }
+            const products = await Product.findAll({
+                where: {
+                    category_id: {
+                        [Op.like]: `${parentId}%` // Product IDs starting with parentId
+                    }
+                },
+                include: [
+                    {
+                        model: ProductDetail,
+                        as: 'detail',
+                        include: [
+                            { model: Size, as: 'size' },
+                            { model: Color, as: 'color' },
+                            { model: ProductImage, as: 'productImage' }
+                        ]
+                    }
+                ]
+            });
+
+            if (!products || products.length === 0) {
+                return res.status(404).json({ message: 'Không tìm thấy sản phẩm với Parent ID này' });
+            }
+
+            res.status(200).json(products);
+        } catch (error) {
+            res.status(500).json({ message: `Lỗi khi lấy sản phẩm theo Parent ID: ${error.message}` });
         }
     },
 

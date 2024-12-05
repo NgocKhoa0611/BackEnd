@@ -34,50 +34,36 @@ const orderController = {
             });
         }
 
-        // Bắt đầu transaction
-        const transaction = await sequelize.transaction();
-        console.log('Transaction started.');
-
         try {
             console.log('Creating new order...');
-            const newOrder = await Order.create(
-                {
-                    user_id,
-                    total_price,
-                    order_status: order_status || 'Chờ xử lý',
-                    payment_method,
-                },
-                { transaction }
-            );
+            const newOrder = await Order.create({
+                user_id,
+                total_price,
+                order_status: order_status || 'Chờ xử lý',
+                payment_method,
+            });
 
             console.log('New order created:', newOrder);
 
             console.log('Creating order details...');
             const orderDetailPromises = order_details.map(async (item) => {
                 console.log('Processing order detail:', item);
-                return await OrderDetail.create(
-                    {
-                        quantity: item.quantity,
-                        total_amount: item.total_amount,
-                        orders_id: newOrder.orders_id,
-                        product_detail_id: item.product_detail_id,
-                    },
-                    { transaction }
-                );
+                return await OrderDetail.create({
+                    quantity: item.quantity,
+                    total_amount: item.total_amount,
+                    orders_id: newOrder.orders_id,
+                    product_detail_id: item.product_detail_id,
+                });
             });
 
             await Promise.all(orderDetailPromises);
             console.log('Order details created successfully.');
-
-            await transaction.commit();
-            console.log('Transaction committed.');
 
             res.status(201).json({
                 message: 'Đơn hàng đã được tạo thành công!',
                 order: newOrder,
             });
         } catch (error) {
-            await transaction.rollback();
             console.error('Error occurred during order creation:', error.message);
 
             res.status(500).json({
@@ -87,7 +73,8 @@ const orderController = {
         }
 
         console.log('--- [END] Create Order ---');
-    },
+    }
+    ,
     async getAllOrders(req, res) {
         try {
             const orders = await Order.findAll({
@@ -103,6 +90,7 @@ const orderController = {
                         ],
                     },
                 ],
+                order: [['orders_id', 'DESC']],
             });
             console.log(`Found ${orders.length} orders.`);
 
@@ -132,6 +120,86 @@ const orderController = {
         } catch (error) {
             console.error("Lỗi khi xác nhận đơn hàng:", error);
             res.status(500).json({ message: "Đã xảy ra lỗi khi xác nhận đơn hàng" });
+        }
+    },
+    async cancelOrder(req, res) {
+        const { id } = req.params;
+
+        try {
+            const order = await Order.findByPk(id);
+
+            if (!order) {
+                return res.status(404).json({ message: 'Đơn hàng không tồn tại.' });
+            }
+
+            if (order.order_status !== 'Chờ xử lý') {
+                return res.status(400).json({ message: 'Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xử lý".' });
+            }
+
+            order.order_status = 'Đã hủy';
+            await order.save();
+
+            return res.status(200).json({ message: 'Đơn hàng đã được hủy thành công.' });
+        } catch (error) {
+            console.error('Lỗi khi hủy đơn hàng:', error.message);
+            return res.status(500).json({ message: 'Đã xảy ra lỗi khi hủy đơn hàng.' });
+        }
+    },
+    async getOrderById(req, res) {
+        const { id } = req.params; // Lấy id từ URL parameters
+        try {
+            const order = await Order.findByPk(id, {
+                include: [
+                    {
+                        model: OrderDetail,
+                        as: 'orderDetail',
+                        include: [
+                            {
+                                model: ProductDetail,
+                                as: 'productDetail',
+                            },
+                        ],
+                    },
+                ],
+            });
+
+            if (!order) {
+                return res.status(404).json({
+                    message: 'Đơn hàng không tồn tại.',
+                });
+            }
+            console.log(`Found order with ID ${id}.`);
+
+            res.status(200).json({
+                message: 'Lấy thông tin đơn hàng thành công!',
+                order,
+            });
+        } catch (error) {
+            console.error('Error occurred while retrieving order:', error.message);
+            res.status(500).json({
+                message: 'Đã có lỗi xảy ra khi lấy thông tin đơn hàng.',
+                error: error.message,
+            });
+        }
+    },
+    async updateStatus(req, res) {
+        const { id } = req.params;
+        const { order_status } = req.body;
+
+        try {
+            const order = await Order.findByPk(id);
+
+            if (!order) {
+                return res.status(404).json({ message: 'Order not found' });
+            }
+
+            order.order_status = order_status;
+            await order.save();
+
+            res.status(200).json({ message: 'Order status updated successfully', order });
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            res.status(500).json({ message: 'Internal server error' });
         }
     }
 
