@@ -72,6 +72,12 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: "product_detail_id",
             as: "productImage",
         });
+
+        // Liên kết với bảng Review
+        ProductDetail.hasMany(models.Review, {
+            foreignKey: "product_detail_id",
+            as: "reviews",
+        });
     };
 
     return ProductDetail;
