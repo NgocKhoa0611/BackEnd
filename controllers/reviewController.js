@@ -22,9 +22,15 @@ const reviewController = {
         }
     },
 
-    // Lấy danh sách review
+    
     async getAllReviews(req, res) {
         try {
+            const { product_detail_id } = req.query; // Lấy product_detail_id từ query string nếu có
+    
+            const whereCondition = product_detail_id
+                ? { product_detail_id } // Lọc theo product_detail_id nếu có
+                : {}; // Không lọc nếu không có product_detail_id
+    
             const reviews = await Review.findAll({
                 include: [
                     {
@@ -33,12 +39,16 @@ const reviewController = {
                         attributes: ['product_detail_id', 'product_id'],
                     },
                 ],
+                where: whereCondition, // Điều kiện lọc
             });
+    
             res.status(200).json(reviews);
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi lấy danh sách review: ${error.message}` });
         }
     },
+    
+
 
     // Lấy thông tin chi tiết review
     async getReviewById(req, res) {
