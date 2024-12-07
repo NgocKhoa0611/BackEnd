@@ -1,3 +1,4 @@
+const { where } = require('sequelize');
 const { Order, OrderDetail, ProductDetail, sequelize } = require('../models');
 
 const orderController = {
@@ -73,8 +74,7 @@ const orderController = {
         }
 
         console.log('--- [END] Create Order ---');
-    }
-    ,
+    },
     async getAllOrders(req, res) {
         try {
             const orders = await Order.findAll({
@@ -146,9 +146,11 @@ const orderController = {
         }
     },
     async getOrderById(req, res) {
-        const { id } = req.params; // Lấy id từ URL parameters
+        const { id } = req.params;
         try {
-            const order = await Order.findByPk(id, {
+            console.log('Start finding order...');
+            const order = await Order.findAll({
+                where: { user_id: id },
                 include: [
                     {
                         model: OrderDetail,
@@ -162,25 +164,22 @@ const orderController = {
                     },
                 ],
             });
-
+            console.log('Order found:', order);
             if (!order) {
+                console.log('Order is null or not found');
                 return res.status(404).json({
                     message: 'Đơn hàng không tồn tại.',
                 });
             }
             console.log(`Found order with ID ${id}.`);
-
             res.status(200).json({
                 message: 'Lấy thông tin đơn hàng thành công!',
                 order,
             });
         } catch (error) {
-            console.error('Error occurred while retrieving order:', error.message);
-            res.status(500).json({
-                message: 'Đã có lỗi xảy ra khi lấy thông tin đơn hàng.',
-                error: error.message,
-            });
+            console.error('Error occurred:', error.message);
         }
+
     },
     async updateStatus(req, res) {
         const { id } = req.params;

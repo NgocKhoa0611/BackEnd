@@ -44,6 +44,13 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 defaultValue: DataTypes.NOW,
             },
+            confirmation_token: {
+                type: DataTypes.STRING
+            },
+            is_confirmed: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false
+            },
         },
         {
             tableName: "user",
