@@ -274,8 +274,49 @@ const productController = {
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi cập nhật sản phẩm: ${error.message}` });
         }
-    }
+    }, 
 
+
+    // Tìm kiếm sản phẩm theo tên
+    async searchProductByName(req, res) {
+        const { name } = req.query; // Lấy từ query parameter
+    
+        try {
+            if (!name) {
+                return res.status(400).json({ message: 'Vui lòng cung cấp tên sản phẩm để tìm kiếm' });
+            }
+    
+            const products = await Product.findAll({
+                where: {
+                    product_name: {
+                        [Op.like]: `%${name}%` // Tìm kiếm tên sản phẩm có chứa chuỗi này
+                    }
+                },
+                include: [
+                    {
+                        model: ProductDetail,
+                        as: 'detail',
+                        include: [
+                            { model: Color, as: 'color' },
+                            { model: Size, as: 'size' },
+                            { model: ProductImage, as: 'productImage' }
+                        ]
+                    }
+                ]
+            });
+    
+            if (products.length === 0) {
+                return res.status(404).json({ message: 'Không tìm thấy sản phẩm phù hợp' });
+            }
+    
+            res.status(200).json(products);
+        } catch (error) {
+            res.status(500).json({ message: `Lỗi khi tìm kiếm sản phẩm: ${error.message}` });
+        }
+    },
+    
+    
+      
 }
 
 module.exports = productController;
