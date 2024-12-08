@@ -1,4 +1,4 @@
-const { Review, ProductDetail } = require('../models'); // Adjust the import path as needed
+const { Review, ProductDetail, User } = require('../models'); // Adjust the import path as needed
 
 const reviewController = {
     // Tạo mới review
@@ -21,16 +21,14 @@ const reviewController = {
             res.status(500).json({ message: `Lỗi khi tạo review: ${error.message}` });
         }
     },
-
-    
     async getAllReviews(req, res) {
         try {
             const { product_detail_id } = req.query; // Lấy product_detail_id từ query string nếu có
-    
+
             const whereCondition = product_detail_id
                 ? { product_detail_id } // Lọc theo product_detail_id nếu có
                 : {}; // Không lọc nếu không có product_detail_id
-    
+
             const reviews = await Review.findAll({
                 include: [
                     {
@@ -41,34 +39,33 @@ const reviewController = {
                 ],
                 where: whereCondition, // Điều kiện lọc
             });
-    
+
             res.status(200).json(reviews);
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi lấy danh sách review: ${error.message}` });
         }
     },
-    
-
-
     // Lấy thông tin chi tiết review
     async getReviewById(req, res) {
         const { id } = req.params;
-
         try {
-            const review = await Review.findByPk(id, {
+            const reviews = await Review.findAll({
+                where: {
+                    product_detail_id: id,
+                },
                 include: [
                     {
-                        model: ProductDetail,
-                        as: 'productDetail',
-                        attributes: ['product_detail_id', 'product_id'],
+                        model: User, as: 'user',
+                        attributes: ['user_id', 'name', 'email', 'avatar'],
                     },
                 ],
             });
 
-            if (!review) {
+            if (!reviews || reviews.length === 0) {
                 return res.status(404).json({ message: 'Không tìm thấy review' });
             }
-            res.status(200).json(review);
+
+            res.status(200).json(reviews); // Return reviews related to the product detail
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi lấy thông tin review: ${error.message}` });
         }
