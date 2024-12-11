@@ -18,6 +18,7 @@ const orderController = {
             order_status,
             payment_method,
             order_details,
+            shipping_address, // Thêm trường shipping_address vào dữ liệu nhận được từ frontend
         } = req.body;
 
         console.log('Request body received:', {
@@ -25,13 +26,14 @@ const orderController = {
             order_status,
             payment_method,
             order_details,
+            shipping_address, // In ra shipping_address
         });
 
         // Kiểm tra dữ liệu đầu vào
-        if (!total_price || !payment_method || !Array.isArray(order_details) || order_details.length === 0) {
+        if (!total_price || !payment_method || !Array.isArray(order_details) || order_details.length === 0 || !shipping_address) {
             console.log('Error: Invalid data in request body');
             return res.status(400).json({
-                message: 'Dữ liệu không hợp lệ. Cần có total_price, payment_method, và order_details.',
+                message: 'Dữ liệu không hợp lệ. Cần có total_price, payment_method, order_details, và shipping_address.',
             });
         }
 
@@ -42,6 +44,7 @@ const orderController = {
                 total_price,
                 order_status: order_status || 'Chờ xử lý',
                 payment_method,
+                shipping_address, // Lưu địa chỉ nhận hàng vào bảng order
             });
 
             console.log('New order created:', newOrder);

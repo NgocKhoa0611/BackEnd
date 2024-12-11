@@ -11,6 +11,7 @@ productRoutes.post('/', productController.addProduct);
 productRoutes.patch('/hide/:id', productController.hideProduct);
 productRoutes.patch('/show/:id', productController.showProduct);
 productRoutes.put('/update/:id', productController.updateProduct);
+productRoutes.get('/search', productController.searchProductByName);
 productRoutes.get('/:id', productController.getProductById);
 
 module.exports = productRoutes;

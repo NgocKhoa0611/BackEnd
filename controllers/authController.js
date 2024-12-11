@@ -7,9 +7,9 @@ const crypto = require("crypto");
 const authController = {
     // Đăng ký
     async registerUser(req, res) {
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Email và mật khẩu không được để trống' });
+        const { email, password, name, phone, address } = req.body;
+        if (!email || !password || !name || !phone || !address) {
+            return res.status(400).json({ message: 'Các trường không được để trống' });
         }
 
         try {
@@ -20,6 +20,9 @@ const authController = {
                 defaults: {
                     email,
                     password: hashedPassword,
+                    name,
+                    phone,
+                    address,
                     confirmation_token: confirmationToken,
                     is_confirmed: false,
                 }
@@ -28,6 +31,7 @@ const authController = {
             if (!created) {
                 return res.status(400).json({ message: 'Email đã tồn tại' });
             }
+
             const transporter = nodemailer.createTransport({
                 service: 'Gmail',
                 auth: {
@@ -55,10 +59,8 @@ const authController = {
                                 Nếu bạn không đăng ký tài khoản, vui lòng bỏ qua email này.
                             </p>
                         </div>`
-
             };
 
-            console.log('Bắt đầu gửi email...');
             transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
                     console.error("Lỗi khi gửi email:", error);
@@ -70,7 +72,7 @@ const authController = {
                 }
             });
         } catch (error) {
-            res.status(400).json({ message: `Đã xảy ra lỗi trong quá trình đăng ký: ${error.message}` });
+            res.status(500).json({ message: `Đã xảy ra lỗi trong quá trình đăng ký: ${error.message}` });
         }
     },
     async confirmAccount(req, res) {
@@ -156,6 +158,96 @@ const authController = {
             });
         } catch (err) {
             return res.status(500).json({ message: "Lỗi server khi xác thực token." });
+        }
+    },
+    async forgotPassword(req, res) {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email không được để trống' });
+        }
+
+        try {
+            const user = await User.findOne({ where: { email } });
+
+            if (!user) {
+                return res.status(404).json({ message: 'Email không tồn tại trong hệ thống' });
+            }
+
+            const resetToken = crypto.randomBytes(32).toString("hex");
+            const resetTokenExpires = new Date(Date.now() + 3600000).toISOString();
+
+            await user.update({
+                reset_token: resetToken,
+                reset_token_expires: resetTokenExpires
+            });
+
+            const transporter = nodemailer.createTransport({
+                service: 'Gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Yêu cầu đặt lại mật khẩu Fashionverse',
+                html: `<div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333; background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 600px; margin: auto;">
+                            <h1 style="color: #0F3460; text-align: center; font-size: 24px;">Đặt lại mật khẩu Fashionverse</h1>
+                            <p style="font-size: 16px; text-align: center; margin-bottom: 20px;">
+                                Nhấp vào liên kết dưới đây để đặt lại mật khẩu của bạn:
+                            </p>
+                            <div style="text-align: center;">
+                                <a href="http://localhost:5173/reset-password?email=${email}&token=${resetToken}" 
+                                style="display: inline-block; padding: 10px 20px; color: #fff; background-color: #0F3460; text-decoration: none; border-radius: 5px; font-size: 16px;">
+                                    Đặt lại mật khẩu
+                                </a>
+                            </div>
+                            <p style="font-size: 14px; color: #777; text-align: center; margin-top: 20px;">
+                                Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+                            </p>
+                        </div>`
+            };
+
+            console.log('Bắt đầu gửi email...');
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error("Lỗi khi gửi email:", error);
+                    return res.status(500).json({ message: 'Không thể gửi email đặt lại mật khẩu' });
+                } else {
+                    console.log("Email đặt lại mật khẩu đã được gửi thành công:", info.response);
+                    return res.status(200).json({ message: 'Đã gửi email đặt lại mật khẩu' });
+                }
+            });
+        } catch (error) {
+            res.status(500).json({ message: `Đã xảy ra lỗi: ${error.message}` });
+        }
+    },
+    async resetPassword(req, res) {
+        const { email, token, password } = req.body;
+
+        try {
+            const user = await User.findOne({ where: { email, reset_token: token } });
+
+            if (!user) {
+                return res.status(400).json({ message: 'Yêu cầu đã hết hạn, vui lòng thử lại' });
+            }
+
+            if (user.reset_token_expires < new Date()) {
+                return res.status(400).json({ message: 'Liên kết không hợp lệ hoặc đã hết hạn' });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            user.password = hashedPassword;
+            user.reset_token = null;
+            user.reset_token_expires = null;
+            await user.save();
+
+            res.status(200).json({ message: 'Đặt lại mật khẩu thành công' });
+        } catch (error) {
+            res.status(500).json({ message: `Lỗi: ${error.message}` });
         }
     }
 

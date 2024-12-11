@@ -24,6 +24,10 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 defaultValue: "Chờ xử lý",
             },
+            shipping_address: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
             user_id: {
                 type: DataTypes.INTEGER,
                 allowNull: false,
