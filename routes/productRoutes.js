@@ -14,4 +14,7 @@ productRoutes.put('/update/:id', productController.updateProduct);
 productRoutes.get('/search', productController.searchProductByName);
 productRoutes.get('/:id', productController.getProductById);
 
+
+
+
 module.exports = productRoutes;

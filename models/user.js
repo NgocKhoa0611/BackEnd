@@ -62,8 +62,16 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
             tableName: "user",
-            timestamps: false,
+            timestamps: false, // Giữ lại false nếu bạn không muốn Sequelize tự động thêm createdAt/updatedAt
         }
     );
+
+    User.associate = (models) => {
+        User.hasMany(models.Order, {
+            foreignKey: 'user_id',
+            as: 'orders',
+        });
+    };
+
     return User;
 };

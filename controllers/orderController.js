@@ -1,5 +1,5 @@
-const { where } = require('sequelize');
-const { Order, OrderDetail, ProductDetail, sequelize } = require('../models');
+const { Order, OrderDetail, ProductDetail, User } = require('../models');
+const nodemailer = require('nodemailer');
 
 const orderController = {
     async createOrder(req, res) {
@@ -125,11 +125,38 @@ const orderController = {
             res.status(500).json({ message: "Đã xảy ra lỗi khi xác nhận đơn hàng" });
         }
     },
+    async sendCancelOrderEmail(userEmail, orderId) {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: userEmail,
+            subject: `Thông báo hủy đơn hàng #${orderId}`,
+            text: `Đơn hàng #${orderId} của bạn đã bị hủy. Nếu bạn có thắc mắc, vui lòng liên hệ với chúng tôi.`
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('Email gửi thành công!');
+        } catch (error) {
+            console.error('Lỗi khi gửi email:', error);
+        }
+    },
     async cancelOrder(req, res) {
         const { id } = req.params;
 
         try {
-            const order = await Order.findByPk(id);
+            const order = await Order.findByPk(id, {
+                include: [{
+                    model: User, as: 'user'
+                }]
+            })
 
             if (!order) {
                 return res.status(404).json({ message: 'Đơn hàng không tồn tại.' });
@@ -139,8 +166,35 @@ const orderController = {
                 return res.status(400).json({ message: 'Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xử lý".' });
             }
 
-            order.order_status = 'Đã hủy';
+            order.order_status = 'Đã hủy bởi cửa hàng';
             await order.save();
+            const userEmail = order.user.email;
+            const orderId = order.id;
+
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: userEmail,
+                subject: `Thông báo hủy đơn hàng #${orderId}`,
+                text: `Đơn hàng #${orderId} của bạn đã bị hủy. Nếu bạn có thắc mắc, vui lòng liên hệ với chúng tôi.`
+            };
+
+            transporter.sendMail(mailOptions, (error) => {
+                if (error) {
+                    console.error("Lỗi khi gửi email:", error);
+                    return res.status(500).json({ message: 'Không thể gửi email xác nhận' });
+                } else {
+                    console.log("Email đã được gửi thành công:");
+                    return res.status(201).json({ message: 'Hủy đơn thành công' });
+                }
+            });
 
             return res.status(200).json({ message: 'Đơn hàng đã được hủy thành công.' });
         } catch (error) {
@@ -167,7 +221,6 @@ const orderController = {
                     },
                 ],
             });
-            console.log('Order found:', order);
             if (!order) {
                 console.log('Order is null or not found');
                 return res.status(404).json({
