@@ -20,9 +20,19 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
             },
             order_status: {
-                type: DataTypes.ENUM("Chờ xử lý", "Đã xác nhận", "Đang giao", "Đã giao", "Đã hủy"),
+                type: DataTypes.ENUM(
+                    "Chờ xử lý",
+                    "Đã xác nhận",
+                    "Đang giao",
+                    "Đã giao",
+                    "Đã hủy bởi cửa hàng",
+                    "Đã hủy bởi khách hàng"),
                 allowNull: false,
                 defaultValue: "Chờ xử lý",
+            },
+            shipping_address: {
+                type: DataTypes.STRING,
+                allowNull: false,
             },
             user_id: {
                 type: DataTypes.INTEGER,
