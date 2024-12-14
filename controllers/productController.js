@@ -187,27 +187,30 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi lấy sản phẩm theo Parent ID: ${error.message}` });
         }
     },
+// Thêm sản phẩm
+async addProduct(req, res) {
+    const { product_name, price, category_id, price_promotion, size_id, color_id } = req.body;
+    const img_url = req.file ? req.file.path : null; // Assuming multer middleware is used for handling image uploads
 
-    // Thêm sản phẩm
-    async addProduct(req, res) {
-        const { product_name, price, category_id, price_promotion } = req.body;
+    try {
+        const newProduct = await Product.create({
+            product_name,
+            price,
+            price_promotion: price_promotion || 0,
+            category_id,
+            size_id,    // Store size information
+            color_id,   // Store color information
+            img_url,    // Store image URL (file path)
+        });
 
-        try {
-            const newProduct = await Product.create({
-                product_name,
-                price,
-                price_promotion: price_promotion || 0,
-                category_id,
-            });
-
-            res.status(201).json({
-                message: 'Thêm sản phẩm thành công',
-                newProduct
-            });
-        } catch (error) {
-            res.status(500).json({ message: `Lỗi khi thêm sản phẩm: ${error.message}` });
-        }
-    },
+        res.status(201).json({
+            message: 'Thêm sản phẩm thành công',
+            newProduct
+        });
+    } catch (error) {
+        res.status(500).json({ message: `Lỗi khi thêm sản phẩm: ${error.message}` });
+    }
+},
 
     // Ẩn sản phẩm
     async hideProduct(req, res) {
@@ -274,17 +277,18 @@ const productController = {
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi cập nhật sản phẩm: ${error.message}` });
         }
-    },
+    }, 
+
 
     // Tìm kiếm sản phẩm theo tên
     async searchProductByName(req, res) {
         const { name } = req.query; // Lấy từ query parameter
-
+    
         try {
             if (!name) {
                 return res.status(400).json({ message: 'Vui lòng cung cấp tên sản phẩm để tìm kiếm' });
             }
-
+    
             const products = await Product.findAll({
                 where: {
                     product_name: {
@@ -303,16 +307,19 @@ const productController = {
                     }
                 ]
             });
-
+    
             if (products.length === 0) {
                 return res.status(404).json({ message: 'Không tìm thấy sản phẩm phù hợp' });
             }
-
+    
             res.status(200).json(products);
         } catch (error) {
             res.status(500).json({ message: `Lỗi khi tìm kiếm sản phẩm: ${error.message}` });
         }
     },
+    
+    
+      
 }
 
 module.exports = productController;
