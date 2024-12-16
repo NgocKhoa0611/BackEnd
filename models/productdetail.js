@@ -46,7 +46,11 @@ module.exports = (sequelize, DataTypes) => {
             },
             isHot: {
                 type: DataTypes.BOOLEAN,
-                defaultValue: false
+                defaultValue: false,
+            },
+            is_hidden: { // Thêm trường này để khớp với bảng
+                type: DataTypes.BOOLEAN,
+                defaultValue: false,
             },
         },
         {
@@ -73,7 +77,7 @@ module.exports = (sequelize, DataTypes) => {
             as: "productImage",
         });
 
-        // Liên kết với bảng Review
+        // Liên kết với bảng Review (giữ nguyên nếu không cần chỉnh sửa)
         ProductDetail.hasMany(models.Review, {
             foreignKey: "product_detail_id",
             as: "reviews",
