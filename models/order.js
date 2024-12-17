@@ -10,6 +10,10 @@ module.exports = (sequelize, DataTypes) => {
                 primaryKey: true,
                 allowNull: false,
             },
+            code: {
+                type: DataTypes.STRING(50),
+                allowNull: false,
+            },
             order_date: {
                 type: DataTypes.DATE,
                 allowNull: false,

@@ -11,10 +11,12 @@ const app = express();
 app.use(bodyParser.json());
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'], // Array of allowed origins
+    origin: ['http://localhost:5173'], // Array of allowed origins
     credentials: true, // Allow credentials
 }));
 
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -112,6 +112,20 @@ const categoryController = {
             console.log("Lỗi khi cập nhật danh mục:", error);
             res.status(500).json({ message: "Có lỗi xảy ra khi cập nhật danh mục" })
         }
+    },
+    // Đếm tổng số danh mục
+    async countCategories(req, res) {
+        try {
+            const count = await Category.count();
+            if (count !== null) {
+                res.status(200).json({ total: count });
+            } else {
+                res.status(404).json({ message: "Không tìm thấy danh mục nào." });
+            }
+        } catch (error) {
+            console.error("Lỗi khi đếm danh mục:", error);
+            res.status(500).json({ message: `Lỗi khi đếm danh mục: ${error.message}` });
+        }
     }
 }
 

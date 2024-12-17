@@ -4,6 +4,7 @@ const upload = require('../middleware/upload');
 
 userRoutes.get('/', userController.getAllUser);
 userRoutes.get('/:id', userController.getUserbyId);
-userRoutes.put('/:id', upload.single('avatar'), userController.updateUser)
+userRoutes.put('/:id', upload.single('avatar'), userController.updateUser);
+userRoutes.get('/total', userController.getTotalUsers);
 
 module.exports = userRoutes;

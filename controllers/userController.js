@@ -97,7 +97,17 @@ const userController = {
             console.error(`Error locking user: ${error.message}`);
             res.status(500).json({ message: `Lỗi khi khóa người dùng: ${error.message}` });
         }
+    },
+    async getTotalUsers(req, res) {
+        try {
+            const totalUsers = await User.count();
+            res.status(200).json({ totalUsers });
+        } catch (error) {
+            console.error(`Error counting users: ${error.message}`);
+            res.status(500).json({ message: `Lỗi khi đếm người dùng: ${error.message}` });
+        }
     }
+
 };
 
 module.exports = userController;

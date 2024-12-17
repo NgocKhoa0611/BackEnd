@@ -313,6 +313,17 @@ const productController = {
             res.status(500).json({ message: `Lỗi khi tìm kiếm sản phẩm: ${error.message}` });
         }
     },
+    async countTotalProducts(req, res) {
+        try {
+            // Sử dụng Sequelize để đếm số lượng sản phẩm
+            const totalCount = await Product.count();
+
+            // Trả về tổng số lượng sản phẩm
+            res.status(200).json({ totalProducts: totalCount });
+        } catch (error) {
+            res.status(500).json({ message: `Lỗi khi tính tổng số lượng sản phẩm: ${error.message}` });
+        }
+    }
 }
 
 module.exports = productController;

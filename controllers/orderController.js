@@ -15,22 +15,26 @@ const orderController = {
 
         const {
             total_price,
+            code,
             order_status,
             payment_method,
             order_details,
-            shipping_address, // Thêm trường shipping_address vào dữ liệu nhận được từ frontend
+            shipping_address,
+            city_id // Thêm trường shipping_address vào dữ liệu nhận được từ frontend
         } = req.body;
 
         console.log('Request body received:', {
             total_price,
+            code,
             order_status,
             payment_method,
             order_details,
-            shipping_address, // In ra shipping_address
+            shipping_address,
+            city_id // In ra shipping_address
         });
 
         // Kiểm tra dữ liệu đầu vào
-        if (!total_price || !payment_method || !Array.isArray(order_details) || order_details.length === 0 || !shipping_address) {
+        if (!total_price || !code || !payment_method || !Array.isArray(order_details) || order_details.length === 0 || !shipping_address || !city_id) {
             console.log('Error: Invalid data in request body');
             return res.status(400).json({
                 message: 'Dữ liệu không hợp lệ. Cần có total_price, payment_method, order_details, và shipping_address.',
@@ -41,10 +45,12 @@ const orderController = {
             console.log('Creating new order...');
             const newOrder = await Order.create({
                 user_id,
+                code,
                 total_price,
                 order_status: order_status || 'Chờ xử lý',
                 payment_method,
-                shipping_address, // Lưu địa chỉ nhận hàng vào bảng order
+                shipping_address,
+                city_id
             });
 
             console.log('New order created:', newOrder);
@@ -169,7 +175,7 @@ const orderController = {
             order.order_status = 'Đã hủy bởi cửa hàng';
             await order.save();
             const userEmail = order.user.email;
-            const orderId = order.id;
+            const orderId = order.orders_id;
 
             const transporter = nodemailer.createTransport({
                 service: 'gmail',
@@ -195,6 +201,29 @@ const orderController = {
                     return res.status(201).json({ message: 'Hủy đơn thành công' });
                 }
             });
+
+            return res.status(200).json({ message: 'Đơn hàng đã được hủy thành công.' });
+        } catch (error) {
+            console.error('Lỗi khi hủy đơn hàng:', error.message);
+            return res.status(500).json({ message: 'Đã xảy ra lỗi khi hủy đơn hàng.' });
+        }
+    },
+    async cancelOrder_User(req, res) {
+        const { id } = req.params;
+
+        try {
+            const order = await Order.findByPk(id);
+
+            if (!order) {
+                return res.status(404).json({ message: 'Đơn hàng không tồn tại.' });
+            }
+
+            if (order.order_status !== 'Chờ xử lý') {
+                return res.status(400).json({ message: 'Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xử lý".' });
+            }
+
+            order.order_status = 'Đã hủy bởi khách hàng';
+            await order.save();
 
             return res.status(200).json({ message: 'Đơn hàng đã được hủy thành công.' });
         } catch (error) {
@@ -256,8 +285,28 @@ const orderController = {
             console.error('Error updating order status:', error);
             res.status(500).json({ message: 'Internal server error' });
         }
-    }
+    },
+    async getTotalOrders(req, res) {
+        try {
+            console.log('Fetching total number of orders...');
 
+            // Đếm tổng số đơn hàng
+            const totalOrders = await Order.count();
+
+            console.log('Total orders:', totalOrders);
+
+            res.status(200).json({
+                message: 'Lấy tổng số đơn hàng thành công!',
+                totalOrders,
+            });
+        } catch (error) {
+            console.error('Error occurred while fetching total orders:', error.message);
+            res.status(500).json({
+                message: 'Đã xảy ra lỗi khi lấy tổng số đơn hàng.',
+                error: error.message,
+            });
+        }
+    }
 };
 
 module.exports = orderController;

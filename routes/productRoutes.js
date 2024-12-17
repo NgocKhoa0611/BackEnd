@@ -13,8 +13,6 @@ productRoutes.patch('/show/:id', productController.showProduct);
 productRoutes.put('/update/:id', productController.updateProduct);
 productRoutes.get('/search', productController.searchProductByName);
 productRoutes.get('/:id', productController.getProductById);
-
-
-
+productRoutes.get('/count', productController.countTotalProducts);
 
 module.exports = productRoutes;
